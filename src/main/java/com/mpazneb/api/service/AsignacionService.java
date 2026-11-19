@@ -8,16 +8,19 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Locale;
 import java.util.UUID;
-
+import com.mpazneb.api.repository.ActividadRepository;
 @Service
 public class AsignacionService {
 
     private final AsignacionRepository asignacionRepository;
+    private final ActividadRepository actividadRepository;
 
     public AsignacionService(
-            AsignacionRepository asignacionRepository
+            AsignacionRepository asignacionRepository,
+            ActividadRepository actividadRepository
     ) {
         this.asignacionRepository = asignacionRepository;
+        this.actividadRepository = actividadRepository;
     }
 
     // Consultar todas las asignaciones
@@ -42,7 +45,18 @@ public class AsignacionService {
 
     // Crear una asignación
     public Asignacion crearAsignacion(Asignacion asignacion) {
+        // Verificar que la actividad exista
+        var actividad = actividadRepository.findById(asignacion.getActividadId())
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "La actividad no existe"
+                ));
 
+// Verificar que la actividad esté activa
+        if (!Boolean.TRUE.equals(actividad.getActiva())) {
+            throw new IllegalArgumentException(
+                    "No se puede asignar una actividad inactiva"
+            );
+        }
         asignacion.setId(null);
 
         // Generar un código que no esté registrado
