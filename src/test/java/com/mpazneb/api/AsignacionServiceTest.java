@@ -118,4 +118,65 @@ class AsignacionServiceTest {
         verify(repositorio, times(1))
                 .findByCodigoTemporal("NOEXISTE01");
     }
+    @Test
+    void actividadInexistenteNoPermiteCrearAsignacion() {
+
+        AsignacionRepository repositorio =
+                mock(AsignacionRepository.class);
+
+        ActividadRepository actividades =
+                mock(ActividadRepository.class);
+
+        AsignacionService servicio =
+                new AsignacionService(repositorio, actividades);
+
+        Asignacion asignacion = new Asignacion();
+        asignacion.setActividadId(999);
+
+        when(actividades.findById(999))
+                .thenReturn(Optional.empty());
+
+        IllegalArgumentException error = assertThrows(
+                IllegalArgumentException.class,
+                () -> servicio.crearAsignacion(asignacion)
+        );
+
+        assertEquals("La actividad no existe", error.getMessage());
+
+        verify(repositorio, never()).save(any(Asignacion.class));
+    }
+
+    @Test
+    void actividadInactivaNoPermiteCrearAsignacion() {
+
+        AsignacionRepository repositorio =
+                mock(AsignacionRepository.class);
+
+        ActividadRepository actividades =
+                mock(ActividadRepository.class);
+
+        AsignacionService servicio =
+                new AsignacionService(repositorio, actividades);
+
+        Actividad actividad = new Actividad();
+        actividad.setActiva(false);
+
+        Asignacion asignacion = new Asignacion();
+        asignacion.setActividadId(1);
+
+        when(actividades.findById(1))
+                .thenReturn(Optional.of(actividad));
+
+        IllegalArgumentException error = assertThrows(
+                IllegalArgumentException.class,
+                () -> servicio.crearAsignacion(asignacion)
+        );
+
+        assertEquals(
+                "No se puede asignar una actividad inactiva",
+                error.getMessage()
+        );
+
+        verify(repositorio, never()).save(any(Asignacion.class));
+    }
 }
