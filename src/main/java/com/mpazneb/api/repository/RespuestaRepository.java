@@ -21,4 +21,6 @@ public interface RespuestaRepository extends JpaRepository<Respuesta, Integer> {
             Integer actividadId,
             Integer preguntaId
     );
+
+    boolean existsByActividadId(Integer actividadId);
 }

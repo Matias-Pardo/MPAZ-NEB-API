@@ -4,10 +4,12 @@ import com.mpazneb.api.model.Asignacion;
 import com.mpazneb.api.model.Pregunta;
 import com.mpazneb.api.model.Respuesta;
 import com.mpazneb.api.model.Resultado;
+
 import com.mpazneb.api.repository.AsignacionRepository;
 import com.mpazneb.api.repository.PreguntaRepository;
 import com.mpazneb.api.repository.RespuestaRepository;
 import com.mpazneb.api.repository.ResultadoRepository;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,58 +36,152 @@ public class ResultadoService {
         this.respuestaRepository = respuestaRepository;
     }
 
-    public List<Resultado> consultarPorAsignacion(Integer asignacionId) {
+    public List<Resultado> consultarPorAsignacion(
+            Integer asignacionId
+    ) {
+
         if (!asignacionRepository.existsById(asignacionId)) {
-            throw new IllegalArgumentException("La asignacion no existe");
+            throw new IllegalArgumentException(
+                    "La asignacion no existe"
+            );
         }
-        return resultadoRepository.findAllByAsignacionId(asignacionId);
+
+        return resultadoRepository.findAllByAsignacionId(
+                asignacionId
+        );
     }
 
-    public Optional<Resultado> buscarPorAsignacion(Integer asignacionId) {
+    public Optional<Resultado> buscarPorAsignacion(
+            Integer asignacionId
+    ) {
+
         if (!asignacionRepository.existsById(asignacionId)) {
-            throw new IllegalArgumentException("La asignacion no existe");
+            throw new IllegalArgumentException(
+                    "La asignacion no existe"
+            );
         }
-        return resultadoRepository.findByAsignacionId(asignacionId);
+
+        return resultadoRepository.findByAsignacionId(
+                asignacionId
+        );
     }
+
+    // CALCULAR RESULTADOS DEL ESTUDIANTE
 
     @Transactional
-    public Resultado calcularYGuardar(Integer asignacionId) {
-        Asignacion asignacion = asignacionRepository.findById(asignacionId)
-                .orElseThrow(() -> new IllegalArgumentException("La asignacion no existe"));
+    public Resultado calcularYGuardar(
+            Integer asignacionId
+    ) {
 
-        List<Pregunta> preguntas = preguntaRepository.findByActividadId(asignacion.getActividadId());
-        List<Respuesta> respuestas = respuestaRepository
-                .findByAsignacionIdOrderByFechaRespuestaAscIdAsc(asignacionId);
+        Asignacion asignacion =
+                asignacionRepository.findById(asignacionId)
+                        .orElseThrow(() ->
+                                new IllegalArgumentException(
+                                        "La asignacion no existe"
+                                )
+                        );
+
+        List<Pregunta> preguntas =
+                preguntaRepository.findByActividadId(
+                        asignacion.getActividadId()
+                );
+
+        List<Respuesta> respuestas =
+                respuestaRepository
+                        .findByAsignacionIdOrderByFechaRespuestaAscIdAsc(
+                                asignacionId
+                        );
 
         int aciertos = 0;
+
         for (Pregunta pregunta : preguntas) {
-            boolean acertada = respuestas.stream().anyMatch(respuesta ->
-                    respuesta.getActividadId().equals(asignacion.getActividadId())
-                            && respuesta.getPreguntaId().equals(pregunta.getId())
-                            && Boolean.TRUE.equals(respuesta.getEsCorrecta())
-            );
+
+            boolean acertada = respuestas.stream()
+                    .anyMatch(respuesta ->
+
+                            respuesta.getActividadId()
+                                    .equals(asignacion.getActividadId())
+
+                                    && respuesta.getPreguntaId()
+                                    .equals(pregunta.getId())
+
+                                    && Boolean.TRUE.equals(
+                                    respuesta.getEsCorrecta()
+                            )
+                    );
+
             if (acertada) {
                 aciertos++;
             }
         }
 
         int intentos = (int) respuestas.stream()
-                .filter(respuesta -> respuesta.getActividadId().equals(asignacion.getActividadId()))
+                .filter(respuesta ->
+                        respuesta.getActividadId()
+                                .equals(asignacion.getActividadId())
+                )
                 .count();
 
-        Resultado resultado = resultadoRepository.findByAsignacionId(asignacionId)
-                .orElseGet(Resultado::new);
+        Resultado resultado =
+                resultadoRepository.findByAsignacionId(
+                        asignacionId
+                ).orElseGet(Resultado::new);
+
         resultado.setAsignacionId(asignacionId);
         resultado.setAciertos(aciertos);
         resultado.setTotalPreguntas(preguntas.size());
         resultado.setIntentos(intentos);
+
         if (resultado.getObservacion() == null) {
             resultado.setObservacion("");
         }
+
         if (resultado.getFechaRegistro() == null) {
-            resultado.setFechaRegistro(System.currentTimeMillis());
+
+            resultado.setFechaRegistro(
+                    System.currentTimeMillis()
+            );
         }
 
         return resultadoRepository.save(resultado);
+    }
+
+    // MODULO ASISTENTE
+    // ACTUALIZAR OBSERVACION PEDAGOGICA
+
+    @Transactional
+    public Optional<Resultado> actualizarObservacion(
+            Integer id,
+            String observacion
+    ) {
+
+        if (
+                observacion == null ||
+                        observacion.trim().isEmpty()
+        ) {
+
+            throw new IllegalArgumentException(
+                    "La observacion no puede estar vacia"
+            );
+        }
+
+        String texto = observacion.trim();
+
+        if (texto.length() > 250) {
+
+            throw new IllegalArgumentException(
+                    "La observacion no puede superar 250 caracteres"
+            );
+        }
+
+        return resultadoRepository.findById(id)
+                .map(resultado -> {
+
+                    resultado.setObservacion(texto);
+
+                    return resultadoRepository.save(
+                            resultado
+                    );
+                });
     }
 }
