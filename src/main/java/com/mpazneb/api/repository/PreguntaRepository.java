@@ -9,4 +9,6 @@ import java.util.List;
 public interface PreguntaRepository extends JpaRepository<Pregunta, Integer> {
 
     List<Pregunta> findByActividadId(Integer actividadId);
+
+    boolean existsByActividadId(Integer actividadId);
 }

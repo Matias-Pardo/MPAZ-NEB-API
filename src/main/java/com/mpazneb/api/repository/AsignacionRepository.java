@@ -12,4 +12,6 @@ public interface AsignacionRepository
     Optional<Asignacion> findByCodigoTemporal(String codigoTemporal);
 
     List<Asignacion> findByEstudianteAlias(String estudianteAlias);
+
+    boolean existsByActividadId(Integer actividadId);
 }
