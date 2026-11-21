@@ -20,11 +20,22 @@ public class Pregunta {
     private Integer actividadId;
 
     private String enunciado;
+
+    @Column(name = "alternativa_a")
     private String alternativaA;
+
+    @Column(name = "alternativa_b")
     private String alternativaB;
+
+    @Column(name = "alternativa_c")
     private String alternativaC;
+
+    @Column(name = "alternativa_d")
     private String alternativaD;
+
+    @Column(name = "respuesta_correcta")
     private String respuestaCorrecta;
+
     private String retroalimentacion;
 
     public Pregunta() {
