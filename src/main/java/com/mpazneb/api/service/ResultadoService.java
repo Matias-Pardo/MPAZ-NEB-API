@@ -1,3 +1,4 @@
+
 package com.mpazneb.api.service;
 
 import com.mpazneb.api.model.Asignacion;
@@ -143,7 +144,51 @@ public class ResultadoService {
             );
         }
 
-        return resultadoRepository.save(resultado);
+        // GUARDAR RESULTADO DEL ESTUDIANTE
+
+        Resultado resultadoGuardado =
+                resultadoRepository.save(resultado);
+
+        // COMPROBAR QUE TODAS LAS PREGUNTAS
+        // FUERON RESUELTAS O AGOTARON SUS TRES INTENTOS
+
+        boolean actividadCompletada =
+                !preguntas.isEmpty() &&
+                        preguntas.stream().allMatch(pregunta -> {
+
+                            List<Respuesta> respuestasPregunta =
+                                    respuestas.stream()
+                                            .filter(respuesta ->
+                                                    asignacion.getActividadId()
+                                                            .equals(respuesta.getActividadId())
+
+                                                            && pregunta.getId()
+                                                            .equals(respuesta.getPreguntaId())
+                                            )
+                                            .toList();
+
+                            boolean respuestaCorrecta =
+                                    respuestasPregunta.stream()
+                                            .anyMatch(respuesta ->
+                                                    Boolean.TRUE.equals(
+                                                            respuesta.getEsCorrecta()
+                                                    )
+                                            );
+
+                            return respuestaCorrecta ||
+                                    respuestasPregunta.size() >= 3;
+                        });
+
+        // ACTUALIZAR ESTADO DE LA ASIGNACION
+
+        if (actividadCompletada) {
+
+            asignacion.setEstado("Completada");
+
+            asignacionRepository.save(asignacion);
+        }
+
+        return resultadoGuardado;
     }
 
     // MODULO ASISTENTE
